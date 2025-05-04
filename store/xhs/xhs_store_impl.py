@@ -181,17 +181,29 @@ class XhsJsonStoreImplement(AbstractStore):
 
     def make_save_file_name(self, store_type: str) -> (str,str):
         """
-        make save file name by store type
+        make save file name by store type and keywords
         Args:
             store_type: Save type contains content and comments（contents | comments）
 
         Returns:
-
+            Tuple of (json file path, word cloud file prefix)
         """
-
+        # 获取当前时间戳
+        timestamp = utils.get_current_timestamp()
+        # 获取搜索关键词，将逗号替换为下划线
+        keywords = config.KEYWORDS.replace(',', '_').replace(' ', '_')
+        # 创建基于关键词的目录
+        keyword_dir = f"{self.json_store_path}/{keywords}"
+        keyword_words_dir = f"{self.words_store_path}/{keywords}"
+        
+        # 确保目录存在
+        pathlib.Path(keyword_dir).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(keyword_words_dir).mkdir(parents=True, exist_ok=True)
+        
+        # 创建文件名: 关键词_类型_时间戳.json
         return (
-            f"{self.json_store_path}/{crawler_type_var.get()}_{store_type}_{utils.get_current_date()}.json",
-            f"{self.words_store_path}/{crawler_type_var.get()}_{store_type}_{utils.get_current_date()}"
+            f"{keyword_dir}/{crawler_type_var.get()}_{store_type}_{timestamp}.json",
+            f"{keyword_words_dir}/{crawler_type_var.get()}_{store_type}_{timestamp}"
         )
 
     async def save_data_to_json(self, save_item: Dict, store_type: str):

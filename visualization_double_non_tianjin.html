@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双非本科经济学天津暑期实习 - 数据分析</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.7/dayjs.min.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            padding-bottom: 50px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-radius: 0 0 15px 15px;
+        }
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .tag {
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .tag:hover {
+            background-color: #dee2e6;
+        }
+        .post-card {
+            border-left: 4px solid #007bff;
+        }
+        .comment-card {
+            border-left: 4px solid #28a745;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .filter-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        #postsList, #commentsList {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .source-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .source-link:hover {
+            text-decoration: underline;
+        }
+        .pagination {
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .badge-post {
+            background-color: #007bff;
+            color: white;
+        }
+        .badge-comment {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header text-center">
+        <h1>双非本科经济学天津暑期实习 - 数据分析</h1>
+        <p class="lead">基于小红书平台数据</p>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">数据概览</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="overviewChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">互动数据分析</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="engagementChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">热门标签</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="tagChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">发布时间分布</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="timeChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">地区分布</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="regionChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">内容检索</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="filter-section">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="contentType">内容类型</label>
+                                        <select class="form-control" id="contentType">
+                                            <option value="all">全部</option>
+                                            <option value="post">帖子</option>
+                                            <option value="comment">评论</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="sortBy">排序方式</label>
+                                        <select class="form-control" id="sortBy">
+                                            <option value="time-desc">时间 (最新)</option>
+                                            <option value="time-asc">时间 (最早)</option>
+                                            <option value="likes-desc">点赞数 (从高到低)</option>
+                                            <option value="comments-desc">评论数 (从高到低)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="searchInput">关键词搜索</label>
+                                        <input type="text" class="form-control" id="searchInput" placeholder="输入关键词">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <button id="searchBtn" class="btn btn-primary">搜索</button>
+                                    <button id="resetBtn" class="btn btn-secondary ml-2">重置</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 搜索结果区域 -->
+                        <div class="results-section">
+                            <h6><span id="resultCount">0</span> 条结果</h6>
+                            <div id="searchResults">
+                                <!-- 搜索结果将动态加载到这里 -->
+                            </div>
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination" id="pagination">
+                                    <!-- 分页控件将动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">热门帖子 <span class="badge badge-post">帖子</span></h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="postsList">
+                            <!-- 帖子列表将动态加载 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">最新评论 <span class="badge badge-comment">评论</span></h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="commentsList">
+                            <!-- 评论列表将动态加载 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 加载数据
+        let postsData = [];
+        let commentsData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let filteredData = [];
+        const KEYWORD = "双非本科经济学天津暑期实习";
+
+        // 加载数据文件
+        async function loadData() {
+            try {
+                // 获取基于关键词的目录下的最新文件
+                const keywordDir = KEYWORD.replace(/,/g, '_').replace(/ /g, '_');
+                const postsPath = `data/xhs/json/${keywordDir}/search_contents_2025-05-04.json`;
+                const commentsPath = `data/xhs/json/${keywordDir}/search_comments_2025-05-04.json`;
+                
+                // 尝试先加载当前文件夹下的文件
+                try {
+                    const postsResponse = await fetch(postsPath);
+                    postsData = await postsResponse.json();
+                    
+                    const commentsResponse = await fetch(commentsPath);
+                    commentsData = await commentsResponse.json();
+                } catch (e) {
+                    // 如果找不到新格式文件，回退到原来的路径
+                    console.log("找不到新格式文件，尝试加载老格式文件");
+                    const postsResponse = await fetch('data/xhs/json/search_contents_2025-05-04.json');
+                    postsData = await postsResponse.json();
+                    
+                    const commentsResponse = await fetch('data/xhs/json/search_comments_2025-05-04.json');
+                    commentsData = await commentsResponse.json();
+                }
+                
+                // 初始化页面
+                initCharts();
+                displayTopPosts();
+                displayLatestComments();
+                setupEventListeners();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.body.innerHTML = `
+                    <div class="container mt-5">
+                        <div class="alert alert-danger">
+                            <h4>数据加载失败</h4>
+                            <p>无法加载数据文件，请确保数据文件路径正确。</p>
+                            <p>错误详情: ${error.message}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 初始化图表
+        function initCharts() {
+            // 数据概览图表
+            const overviewChart = echarts.init(document.getElementById('overviewChart'));
+            const overviewOption = {
+                title: {
+                    text: '数据数量概览',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: ['帖子', '评论']
+                },
+                series: [
+                    {
+                        name: '数据类型',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false,
+                            position: 'center'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '20',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: [
+                            { value: postsData.length, name: '帖子' },
+                            { value: commentsData.length, name: '评论' }
+                        ]
+                    }
+                ]
+            };
+            overviewChart.setOption(overviewOption);
+
+            // 互动数据分析图表
+            const engagementData = postsData.map(post => {
+                const likedCount = parseInt(post.liked_count.replace(/[^\d]/g, '')) || 0;
+                const commentCount = parseInt(post.comment_count.replace(/[^\d]/g, '')) || 0;
+                const collectedCount = parseInt(post.collected_count.replace(/[^\d]/g, '')) || 0;
+                const shareCount = parseInt(post.share_count.replace(/[^\d]/g, '')) || 0;
+                
+                return {
+                    title: post.title,
+                    likes: likedCount,
+                    comments: commentCount,
+                    collects: collectedCount,
+                    shares: shareCount
+                };
+            }).sort((a, b) => b.likes - a.likes).slice(0, 10);
+
+            const engagementChart = echarts.init(document.getElementById('engagementChart'));
+            const engagementOption = {
+                title: {
+                    text: '热门帖子互动数据',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                legend: {
+                    data: ['点赞', '评论', '收藏', '分享'],
+                    top: 30
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value'
+                },
+                yAxis: {
+                    type: 'category',
+                    data: engagementData.map((item, index) => `帖子${index+1}`),
+                    axisLabel: {
+                        formatter: function(value) {
+                            return value;
+                        }
+                    }
+                },
+                series: [
+                    {
+                        name: '点赞',
+                        type: 'bar',
+                        stack: 'total',
+                        emphasis: { focus: 'series' },
+                        data: engagementData.map(item => item.likes)
+                    },
+                    {
+                        name: '评论',
+                        type: 'bar',
+                        stack: 'total',
+                        emphasis: { focus: 'series' },
+                        data: engagementData.map(item => item.comments)
+                    },
+                    {
+                        name: '收藏',
+                        type: 'bar',
+                        stack: 'total',
+                        emphasis: { focus: 'series' },
+                        data: engagementData.map(item => item.collects)
+                    },
+                    {
+                        name: '分享',
+                        type: 'bar',
+                        stack: 'total',
+                        emphasis: { focus: 'series' },
+                        data: engagementData.map(item => item.shares)
+                    }
+                ]
+            };
+            engagementChart.setOption(engagementOption);
+
+            // 热门标签图表
+            const tagMap = {};
+            postsData.forEach(post => {
+                if (post.tag_list) {
+                    const tags = post.tag_list.split(',');
+                    tags.forEach(tag => {
+                        if (tag.trim()) {
+                            tagMap[tag.trim()] = (tagMap[tag.trim()] || 0) + 1;
+                        }
+                    });
+                }
+            });
+            
+            const tagData = Object.entries(tagMap)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 20);
+
+            const tagChart = echarts.init(document.getElementById('tagChart'));
+            const tagOption = {
+                title: {
+                    text: '热门标签词云',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c}'
+                },
+                series: [{
+                    type: 'wordCloud',
+                    name: '标签出现次数',
+                    shape: 'circle',
+                    sizeRange: [15, 60],
+                    rotationRange: [0, 0],
+                    rotationStep: 45,
+                    gridSize: 8,
+                    drawOutOfBound: false,
+                    textStyle: {
+                        fontFamily: 'sans-serif',
+                        fontWeight: 'bold',
+                        color: function () {
+                            return 'rgb(' + [
+                                Math.round(Math.random() * 160 + 60),
+                                Math.round(Math.random() * 160 + 60),
+                                Math.round(Math.random() * 160 + 60)
+                            ].join(',') + ')';
+                        }
+                    },
+                    emphasis: {
+                        textStyle: {
+                            shadowBlur: 10,
+                            shadowColor: '#333'
+                        }
+                    },
+                    data: tagData
+                }]
+            };
+            tagChart.setOption(tagOption);
+
+            // 发布时间分布图表
+            const timeData = {};
+            postsData.forEach(post => {
+                const date = new Date(post.time);
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                timeData[dateStr] = (timeData[dateStr] || 0) + 1;
+            });
+            
+            const timeChartData = Object.entries(timeData)
+                .map(([date, count]) => ({ date, count }))
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const timeChart = echarts.init(document.getElementById('timeChart'));
+            const timeOption = {
+                title: {
+                    text: '帖子发布时间分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: timeChartData.map(item => item.date),
+                    axisLabel: {
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '帖子数量'
+                },
+                series: [{
+                    name: '帖子数量',
+                    type: 'line',
+                    data: timeChartData.map(item => item.count),
+                    smooth: true,
+                    symbol: 'emptyCircle',
+                    symbolSize: 8,
+                    lineStyle: {
+                        width: 3
+                    },
+                    areaStyle: {
+                        opacity: 0.2
+                    }
+                }]
+            };
+            timeChart.setOption(timeOption);
+
+            // 地区分布图表
+            const regionMap = {};
+            postsData.forEach(post => {
+                if (post.ip_location) {
+                    regionMap[post.ip_location] = (regionMap[post.ip_location] || 0) + 1;
+                }
+            });
+            
+            const regionData = Object.entries(regionMap)
+                .map(([name, value]) => ({ name, value }))
+                .sort((a, b) => b.value - a.value);
+
+            const regionChart = echarts.init(document.getElementById('regionChart'));
+            const regionOption = {
+                title: {
+                    text: '发布地区分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                series: [{
+                    name: '地区分布',
+                    type: 'pie',
+                    radius: '65%',
+                    center: ['50%', '50%'],
+                    data: regionData,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    },
+                    label: {
+                        formatter: '{b}: {c} ({d}%)'
+                    }
+                }]
+            };
+            regionChart.setOption(regionOption);
+
+            // 窗口大小变化时重新渲染图表
+            window.addEventListener('resize', function() {
+                overviewChart.resize();
+                engagementChart.resize();
+                tagChart.resize();
+                timeChart.resize();
+                regionChart.resize();
+            });
+        }
+
+        // 显示热门帖子
+        function displayTopPosts() {
+            const topPosts = [...postsData]
+                .sort((a, b) => {
+                    const aLikes = parseInt(a.liked_count.replace(/[^\d]/g, '')) || 0;
+                    const bLikes = parseInt(b.liked_count.replace(/[^\d]/g, '')) || 0;
+                    return bLikes - aLikes;
+                })
+                .slice(0, 10);
+            
+            const postsHtml = topPosts.map(post => {
+                const date = new Date(post.time);
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                
+                return `
+                    <div class="card post-card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">${post.title}</h6>
+                            <p class="card-text small">${post.desc.substring(0, 100)}${post.desc.length > 100 ? '...' : ''}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <span class="me-2">👍 ${post.liked_count}</span>
+                                    <span class="me-2">💬 ${post.comment_count}</span>
+                                    <span>${dateStr}</span>
+                                </small>
+                                <a href="${post.note_url}" target="_blank" class="source-link">查看原文</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('postsList').innerHTML = postsHtml;
+        }
+
+        // 显示最新评论
+        function displayLatestComments() {
+            const latestComments = [...commentsData]
+                .sort((a, b) => new Date(b.create_time) - new Date(a.create_time))
+                .slice(0, 10);
+            
+            const commentsHtml = latestComments.map(comment => {
+                const date = new Date(comment.create_time);
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                
+                // 查找对应的帖子
+                const relatedPost = postsData.find(post => post.note_id === comment.note_id) || { title: '未知帖子' };
+                
+                return `
+                    <div class="card comment-card mb-3">
+                        <div class="card-body">
+                            <p class="card-text">${comment.content}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <span class="me-2">👤 ${comment.nickname}</span>
+                                    <span class="me-2">👍 ${comment.like_count || 0}</span>
+                                    <span>${dateStr}</span>
+                                </small>
+                                <small class="text-muted">评论于: ${relatedPost.title.substring(0, 15)}${relatedPost.title.length > 15 ? '...' : ''}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('commentsList').innerHTML = commentsHtml;
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+            document.getElementById('resetBtn').addEventListener('click', resetSearch);
+            document.getElementById('contentType').addEventListener('change', updateFilterOptions);
+        }
+
+        // 执行搜索
+        function performSearch() {
+            const contentType = document.getElementById('contentType').value;
+            const sortBy = document.getElementById('sortBy').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            // 根据内容类型过滤数据
+            if (contentType === 'post') {
+                filteredData = postsData.filter(post => {
+                    return (post.title.toLowerCase().includes(searchTerm) || 
+                           post.desc.toLowerCase().includes(searchTerm));
+                }).map(post => ({ ...post, type: 'post' }));
+            } else if (contentType === 'comment') {
+                filteredData = commentsData.filter(comment => {
+                    return comment.content.toLowerCase().includes(searchTerm);
+                }).map(comment => ({ ...comment, type: 'comment' }));
+            } else {
+                const filteredPosts = postsData.filter(post => {
+                    return (post.title.toLowerCase().includes(searchTerm) || 
+                           post.desc.toLowerCase().includes(searchTerm));
+                }).map(post => ({ ...post, type: 'post' }));
+                
+                const filteredComments = commentsData.filter(comment => {
+                    return comment.content.toLowerCase().includes(searchTerm);
+                }).map(comment => ({ ...comment, type: 'comment' }));
+                
+                filteredData = [...filteredPosts, ...filteredComments];
+            }
+            
+            // 排序数据
+            sortFilteredData(sortBy);
+            
+            // 更新结果计数并展示第一页
+            document.getElementById('resultCount').textContent = filteredData.length;
+            currentPage = 1;
+            displaySearchResults();
+        }
+
+        // 排序过滤后的数据
+        function sortFilteredData(sortBy) {
+            switch (sortBy) {
+                case 'time-desc':
+                    filteredData.sort((a, b) => {
+                        const aTime = a.type === 'post' ? a.time : a.create_time;
+                        const bTime = b.type === 'post' ? b.time : b.create_time;
+                        return bTime - aTime;
+                    });
+                    break;
+                case 'time-asc':
+                    filteredData.sort((a, b) => {
+                        const aTime = a.type === 'post' ? a.time : a.create_time;
+                        const bTime = b.type === 'post' ? b.time : b.create_time;
+                        return aTime - bTime;
+                    });
+                    break;
+                case 'likes-desc':
+                    filteredData.sort((a, b) => {
+                        const aLikes = a.type === 'post' ? 
+                            (parseInt(a.liked_count.replace(/[^\d]/g, '')) || 0) : 
+                            (parseInt(a.like_count) || 0);
+                        const bLikes = b.type === 'post' ? 
+                            (parseInt(b.liked_count.replace(/[^\d]/g, '')) || 0) : 
+                            (parseInt(b.like_count) || 0);
+                        return bLikes - aLikes;
+                    });
+                    break;
+                case 'comments-desc':
+                    filteredData.sort((a, b) => {
+                        if (a.type === 'post' && b.type === 'post') {
+                            const aComments = parseInt(a.comment_count.replace(/[^\d]/g, '')) || 0;
+                            const bComments = parseInt(b.comment_count.replace(/[^\d]/g, '')) || 0;
+                            return bComments - aComments;
+                        } else if (a.type === 'post') {
+                            return -1;
+                        } else if (b.type === 'post') {
+                            return 1;
+                        } else {
+                            const aSubComments = parseInt(a.sub_comment_count) || 0;
+                            const bSubComments = parseInt(b.sub_comment_count) || 0;
+                            return bSubComments - aSubComments;
+                        }
+                    });
+                    break;
+            }
+        }
+
+        // 展示搜索结果
+        function displaySearchResults() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const currentPageData = filteredData.slice(startIndex, endIndex);
+            
+            const resultsHtml = currentPageData.map(item => {
+                if (item.type === 'post') {
+                    const date = new Date(item.time);
+                    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    
+                    return `
+                        <div class="card post-card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title mb-0">${item.title}</h6>
+                                    <span class="badge badge-post">帖子</span>
+                                </div>
+                                <p class="card-text small">${item.desc.substring(0, 200)}${item.desc.length > 200 ? '...' : ''}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <span class="me-2">👍 ${item.liked_count}</span>
+                                        <span class="me-2">💬 ${item.comment_count}</span>
+                                        <span>${dateStr}</span>
+                                    </small>
+                                    <a href="${item.note_url}" target="_blank" class="source-link">查看原文</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const date = new Date(item.create_time);
+                    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    
+                    // 查找对应的帖子
+                    const relatedPost = postsData.find(post => post.note_id === item.note_id) || { title: '未知帖子', note_url: '#' };
+                    
+                    return `
+                        <div class="card comment-card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title mb-0">来自 ${item.nickname} 的评论</h6>
+                                    <span class="badge badge-comment">评论</span>
+                                </div>
+                                <p class="card-text">${item.content}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <span class="me-2">👍 ${item.like_count || 0}</span>
+                                        <span>${dateStr}</span>
+                                    </small>
+                                    <small class="text-muted">
+                                        评论于: <a href="${relatedPost.note_url}" target="_blank" class="source-link">
+                                            ${relatedPost.title.substring(0, 15)}${relatedPost.title.length > 15 ? '...' : ''}
+                                        </a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+            
+            document.getElementById('searchResults').innerHTML = resultsHtml || '<div class="alert alert-info">没有找到匹配的结果</div>';
+            
+            // 更新分页
+            updatePagination();
+        }
+
+        // 重置搜索
+        function resetSearch() {
+            document.getElementById('contentType').value = 'all';
+            document.getElementById('sortBy').value = 'time-desc';
+            document.getElementById('searchInput').value = '';
+            
+            filteredData = [];
+            document.getElementById('resultCount').textContent = '0';
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('pagination').innerHTML = '';
+        }
+
+        // 更新过滤选项
+        function updateFilterOptions() {
+            const contentType = document.getElementById('contentType').value;
+            const sortBySelect = document.getElementById('sortBy');
+            
+            // 重置排序选项
+            sortBySelect.innerHTML = `
+                <option value="time-desc">时间 (最新)</option>
+                <option value="time-asc">时间 (最早)</option>
+                <option value="likes-desc">点赞数 (从高到低)</option>
+            `;
+            
+            // 如果选择了帖子，添加评论数排序选项
+            if (contentType === 'post' || contentType === 'all') {
+                sortBySelect.innerHTML += `<option value="comments-desc">评论数 (从高到低)</option>`;
+            }
+        }
+
+        // 更新分页控件
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            let paginationHtml = '';
+            
+            if (totalPages > 1) {
+                paginationHtml += `
+                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage - 1}">上一页</a>
+                    </li>
+                `;
+                
+                // 显示页码
+                const startPage = Math.max(1, currentPage - 2);
+                const endPage = Math.min(totalPages, startPage + 4);
+                
+                for (let i = startPage; i <= endPage; i++) {
+                    paginationHtml += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                        </li>
+                    `;
+                }
+                
+                paginationHtml += `
+                    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage + 1}">下一页</a>
+                    </li>
+                `;
+            }
+            
+            const paginationElement = document.getElementById('pagination');
+            paginationElement.innerHTML = paginationHtml;
+            
+            // 添加分页事件监听器
+            paginationElement.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = parseInt(this.getAttribute('data-page'));
+                    if (page && page !== currentPage) {
+                        currentPage = page;
+                        displaySearchResults();
+                        // 滚动到结果区域
+                        document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html> 

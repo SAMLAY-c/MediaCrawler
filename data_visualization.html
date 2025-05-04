@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小红书MCP评论数据可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f8f8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #ff2442; /* 小红书红色 */
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        .card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .card-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .tag {
+            display: inline-block;
+            background-color: #fff2f2;
+            color: #ff2442;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .tag-cloud {
+            margin: 20px 0;
+        }
+        .content-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .content-table th, .content-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .content-table th {
+            background-color: #f9f9f9;
+        }
+        .engagement-metric {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            color: #666;
+        }
+        .engagement-metric i {
+            margin-right: 5px;
+        }
+        .loading {
+            text-align: center;
+            padding: 100px;
+            font-size: 18px;
+            color: #999;
+        }
+        .sentiment-positive {
+            color: #28a745;
+        }
+        .sentiment-neutral {
+            color: #6c757d;
+        }
+        .sentiment-negative {
+            color: #dc3545;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom: 2px solid #ff2442;
+            color: #ff2442;
+            font-weight: bold;
+        }
+        .comment-card {
+            border-left: 3px solid #ff2442;
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-radius: 0 8px 8px 0;
+        }
+        .comment-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .comment-content {
+            line-height: 1.5;
+        }
+        .flex-row {
+            display: flex;
+            gap: 20px;
+        }
+        .flex-column {
+            flex: 1;
+        }
+        .search-filter-container {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .search-container {
+            display: flex;
+            gap: 10px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #ff2442;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #e61e3c;
+        }
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            min-width: 120px;
+        }
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .pagination {
+            display: flex;
+            gap: 5px;
+        }
+        .page-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .page-btn:hover {
+            background-color: #f8f8f8;
+        }
+        .page-btn.active {
+            background-color: #ff2442;
+            color: white;
+            border-color: #ff2442;
+        }
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .showing-info, .page-size-selector {
+            color: #666;
+            font-size: 14px;
+        }
+        .page-size-select {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>小红书MCP评论数据分析与可视化</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="comments-analysis">评论分析</div>
+            <div class="tab" data-tab="content-overview">内容概览</div>
+        </div>
+        
+        <div class="tab-content active" id="comments-analysis">
+            <div class="dashboard">
+                <div class="chart-container">
+                    <h3>评论情感分析</h3>
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>评论地域分布</h3>
+                    <div id="regionChart" style="width: 100%; height: 300px;"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>评论时间分布</h3>
+                    <canvas id="timeDistributionChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>评论长度分析</h3>
+                    <canvas id="commentLengthChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="full-width">
+                <h3>评论关键词主题分析</h3>
+                <div id="commentCloud" style="width: 100%; height: 350px;"></div>
+            </div>
+            
+            <div class="flex-row">
+                <div class="flex-column">
+                    <h3>评论搜索与过滤</h3>
+                    <div class="card search-filter-container">
+                        <div class="search-container">
+                            <input type="text" id="commentSearch" placeholder="搜索评论内容..." class="search-input">
+                            <button id="searchButton" class="btn">搜索</button>
+                        </div>
+                        <div class="filter-container">
+                            <select id="sentimentFilter" class="filter-select">
+                                <option value="all">全部情感</option>
+                                <option value="positive">积极</option>
+                                <option value="neutral">中性</option>
+                                <option value="negative">消极</option>
+                            </select>
+                            <select id="regionFilter" class="filter-select">
+                                <option value="all">全部地区</option>
+                                <!-- 地区选项将通过JS动态填充 -->
+                            </select>
+                            <select id="sortOption" class="filter-select">
+                                <option value="time_desc">时间：最新优先</option>
+                                <option value="time_asc">时间：最早优先</option>
+                                <option value="likes_desc">点赞：从高到低</option>
+                                <option value="likes_asc">点赞：从低到高</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-row">
+                <div class="flex-column">
+                    <h3>全部评论数据 (<span id="totalComments">0</span>条)</h3>
+                    <div class="card">
+                        <table class="content-table">
+                            <thead>
+                                <tr>
+                                    <th>用户</th>
+                                    <th>评论内容</th>
+                                    <th>点赞数</th>
+                                    <th>地域</th>
+                                    <th>情感</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commentTableBody">
+                                <!-- 评论将通过JavaScript动态添加 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pagination-container">
+                <div class="showing-info">显示 <span id="showingFrom">0</span>-<span id="showingTo">0</span> 条，共 <span id="totalItems">0</span> 条</div>
+                <div class="pagination" id="pagination">
+                    <!-- 分页按钮将通过JS动态添加 -->
+                </div>
+                <div class="page-size-selector">
+                    每页显示:
+                    <select id="pageSize" class="page-size-select">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h3>主题聚类分析</h3>
+            <div class="flex-row">
+                <div class="flex-column card">
+                    <h4>技术讨论</h4>
+                    <div id="technicalComments">
+                        <!-- 技术相关评论 -->
+                    </div>
+                </div>
+                <div class="flex-column card">
+                    <h4>使用体验</h4>
+                    <div id="experienceComments">
+                        <!-- 用户体验相关评论 -->
+                    </div>
+                </div>
+                <div class="flex-column card">
+                    <h4>问题咨询</h4>
+                    <div id="questionComments">
+                        <!-- 问题咨询相关评论 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="content-overview">
+            <div class="dashboard">
+                <div class="chart-container">
+                    <h3>内容类型分布</h3>
+                    <canvas id="contentTypeChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>热门标签分析</h3>
+                    <div id="tagChart" style="width: 100%; height: 300px;"></div>
+                </div>
+                
+                <div class="chart-container full-width">
+                    <h3>互动指标分析 (点赞、收藏、评论)</h3>
+                    <canvas id="engagementChart"></canvas>
+                </div>
+                
+                <div class="chart-container full-width">
+                    <h3>内容发布时间趋势</h3>
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+            
+            <h2>热门内容列表</h2>
+            <div class="card">
+                <table class="content-table">
+                    <thead>
+                        <tr>
+                            <th>标题</th>
+                            <th>作者</th>
+                            <th>类型</th>
+                            <th>互动数据</th>
+                            <th>发布时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contentTableBody">
+                        <!-- 内容将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟异步加载数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 标签切换功能
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有tab的active类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // 给当前点击的tab添加active类
+                    this.classList.add('active');
+                    
+                    // 隐藏所有内容
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // 显示对应的内容
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 重新渲染echarts图表
+                    window.dispatchEvent(new Event('resize'));
+                });
+            });
+            
+            // 这里应该是从JSON文件加载数据
+            // 为了演示，我们直接使用预处理好的数据
+            
+            // 内容数据处理
+            const contentsData = [
+                {
+                    "note_id": "67fbc1b9000000001d02f062",
+                    "type": "video",
+                    "title": "MCP幼儿园级教程，让你的AI自己干活！",
+                    "liked_count": "1.6万",
+                    "collected_count": "1.6万",
+                    "comment_count": "223",
+                    "nickname": "秋芝2046",
+                    "time": 1744552377000
+                },
+                {
+                    "note_id": "67d2df0d000000001e002040",
+                    "type": "video",
+                    "title": "MCP是啥？技术原理是什么一个视频搞懂MCP",
+                    "liked_count": "3505",
+                    "collected_count": "4611",
+                    "comment_count": "67",
+                    "nickname": "技术爬爬虾",
+                    "time": 1741872909000
+                },
+                {
+                    "note_id": "6803badb000000001c032b33",
+                    "type": "normal",
+                    "title": "30分钟…我用mcp做了一个AI播客！",
+                    "liked_count": "2487",
+                    "collected_count": "2959",
+                    "comment_count": "87",
+                    "nickname": "AI Dance",
+                    "time": 1745321614000
+                },
+                {
+                    "note_id": "67fa16db000000001201d550",
+                    "type": "normal",
+                    "title": "一篇搞明白！MCP、RAG、Agent概念和关系",
+                    "liked_count": "1777",
+                    "collected_count": "2875",
+                    "comment_count": "252",
+                    "nickname": "AI大模型知识官",
+                    "time": 1744443099000
+                },
+                {
+                    "note_id": "67fe71b3000000001c00597e",
+                    "type": "normal",
+                    "title": "这是全网第一篇由MCP工具发布的小红书。。。",
+                    "liked_count": "1672",
+                    "collected_count": "1673",
+                    "comment_count": "123",
+                    "nickname": "电波曲奇 Ai Cookie",
+                    "time": 1744728499000
+                }
+            ];
+            
+            // 评论数据处理
+            const commentsData = [
+                {
+                    "comment_id": "67fbed7d0000000012013613",
+                    "content": "咒语在这里～[棒R]",
+                    "nickname": "秋芝2046",
+                    "ip_location": "广东",
+                    "create_time": 1744563583000,
+                    "like_count": "90",
+                    "sentiment": "positive",
+                    "cluster": "technical"
+                },
+                {
+                    "comment_id": "6801d2a90000000012012910",
+                    "content": "在哪能下载中文版的cursor呢",
+                    "nickname": "非黑即白",
+                    "ip_location": "北京",
+                    "create_time": 1744949930000,
+                    "like_count": "11",
+                    "sentiment": "neutral",
+                    "cluster": "question"
+                },
+                {
+                    "comment_id": "67fbc3b2000000001f0054b8",
+                    "content": "MCP（Model Context Protocol，模型上下文协议） 是 Anthropic 公司于2024年提出的一种开放标准协议，旨在解决大语言模型（LLMs）与外部数据和工具集成的难题。它通过标准化接口，让 AI 模型能够动态调用外部资源（如数据库、API、文件系统等），突破传统模型的局限性，实现更高效、安全且灵活的人机交互。",
+                    "nickname": "我想放假",
+                    "ip_location": "河南",
+                    "create_time": 1744552882000,
+                    "like_count": "5",
+                    "sentiment": "neutral",
+                    "cluster": "technical"
+                },
+                {
+                    "comment_id": "67d2e7c500000000150299b6",
+                    "content": "冒昧地问问 这个和agent是不是有点像",
+                    "nickname": "Mikael",
+                    "ip_location": "上海",
+                    "create_time": 1741875142000,
+                    "like_count": "7",
+                    "sentiment": "neutral",
+                    "cluster": "question"
+                },
+                {
+                    "comment_id": "67db333b0000000018009831",
+                    "content": "不就跟function call一样，无非标准化了",
+                    "nickname": "我在海边挖嘎啦",
+                    "ip_location": "浙江",
+                    "create_time": 1742418747000,
+                    "like_count": "9",
+                    "sentiment": "negative",
+                    "cluster": "technical"
+                },
+                {
+                    "comment_id": "680dc7260000000013010212",
+                    "content": "我这个是啥情况啊[哭惹R]",
+                    "nickname": "EchoЯ",
+                    "ip_location": "江西",
+                    "create_time": 1745733416000,
+                    "like_count": "2",
+                    "sentiment": "negative",
+                    "cluster": "experience"
+                },
+                {
+                    "comment_id": "67d3a8c7000000001703a2de",
+                    "content": "自然语言到查询代码的转换是你选择的deepseek v3做的还是mcp server完成的？",
+                    "nickname": "萤火",
+                    "ip_location": "广东",
+                    "create_time": 1741924552000,
+                    "like_count": "2",
+                    "sentiment": "neutral",
+                    "cluster": "question"
+                },
+                {
+                    "comment_id": "68143179000000000401ed39",
+                    "content": "太强了！感谢分享，已经用上了，效率提升了好多！",
+                    "nickname": "牛角包",
+                    "ip_location": "吉林",
+                    "create_time": 1746153850000,
+                    "like_count": "4",
+                    "sentiment": "positive",
+                    "cluster": "experience"
+                },
+                {
+                    "comment_id": "67fe71b3000000001b0054b8",
+                    "content": "MCP让AI工具调用变得如此简单，无需编程基础，真是赋能了普通用户",
+                    "nickname": "科技薯",
+                    "ip_location": "四川",
+                    "create_time": 1744728500000,
+                    "like_count": "15",
+                    "sentiment": "positive",
+                    "cluster": "experience"
+                },
+                {
+                    "comment_id": "68161c13000000000400bb9f",
+                    "content": "我用MCP做了一个自动收集整理学习资料的工具，非常好用！推荐大家尝试",
+                    "nickname": "会种田养猪的摄影师",
+                    "ip_location": "广东",
+                    "create_time": 1746279443000,
+                    "like_count": "8",
+                    "sentiment": "positive",
+                    "cluster": "experience"
+                }
+            ];
+            
+            // 评论地域分布
+            const locationCounts = {
+                "广东": 18,
+                "北京": 12,
+                "上海": 9,
+                "浙江": 8,
+                "四川": 7,
+                "河南": 5,
+                "江西": 4,
+                "吉林": 3,
+                "其他": 15
+            };
+            
+            // 评论情感分析
+            const sentimentCounts = {
+                "positive": 45,
+                "neutral": 32,
+                "negative": 23
+            };
+            
+            // 评论长度分布
+            const lengthDistribution = {
+                "短评(0-20字)": 35,
+                "中评(21-50字)": 28,
+                "长评(51-100字)": 15,
+                "超长评(>100字)": 7
+            };
+            
+            // 评论时间分布
+            const timeDistribution = {
+                "凌晨(0-6点)": 5,
+                "上午(6-12点)": 25,
+                "下午(12-18点)": 42,
+                "晚上(18-24点)": 28
+            };
+            
+            // 完整评论数据数组
+            let allCommentsData = [];
+            
+            // 当前页和过滤状态
+            let currentPage = 1;
+            let pageSize = 20;
+            let searchTerm = '';
+            let sentimentFilter = 'all';
+            let regionFilter = 'all';
+            let sortOption = 'time_desc';
+            
+            // 异步加载评论数据
+            async function loadCommentsData() {
+                try {
+                    // 这里通常会从服务器获取数据，但为了演示，我们将使用本地数据
+                    // 可以通过 fetch API 从服务器获取 JSON 数据
+                    // const response = await fetch('data/xhs/json/search_comments_2025-05-04.json');
+                    // allCommentsData = await response.json();
+                    
+                    // 临时示例数据，将在实际环境中替换为完整数据
+                    allCommentsData = generateComments(250); // 生成250条模拟评论
+                    
+                    // 更新地区过滤器选项
+                    updateRegionFilterOptions();
+                    
+                    // 应用过滤并显示评论
+                    applyFiltersAndDisplay();
+                    
+                    // 更新计数
+                    document.getElementById('totalComments').textContent = allCommentsData.length;
+                } catch (error) {
+                    console.error('加载评论数据失败:', error);
+                }
+            }
+            
+            // 生成模拟评论数据（仅用于演示）
+            function generateComments(count) {
+                const comments = [];
+                const regions = ['广东', '北京', '上海', '浙江', '四川', '河南', '江西', '吉林', '福建', '安徽', '湖南', '湖北', '云南', '贵州', '新疆', '内蒙古', '海外'];
+                const sentiments = ['positive', 'neutral', 'negative'];
+                const clusters = ['technical', 'experience', 'question'];
+                
+                // 将现有的示例评论数据添加到模拟数据中
+                comments.push(...commentsData);
+                
+                // 读取评论示例内容作为模板
+                const commentTemplates = [
+                    "MCP是将LLM与外部工具连接的标准协议，比传统Function Calling更加灵活。",
+                    "请问有人知道怎么在Windows环境下设置MCP服务吗？",
+                    "我设置了MCP环境后工作效率提高了好多，强烈推荐！",
+                    "cursor这个工具好用吗？值得付费吗？",
+                    "国内有没有做得比较好的MCP供应商推荐？",
+                    "使用MCP后我的开发效率提升了30%，特别是数据处理方面",
+                    "MCP的安全性如何？有没有数据泄露的风险？",
+                    "我觉得MCP和传统的API调用没什么区别，只是换了个壳而已",
+                    "这个技术太强了！完全改变了我的工作方式",
+                    "谁能解释一下MCP和RAG的关系？",
+                    "想学习如何搭建自己的MCP服务，有没有教程推荐？",
+                    "我用MCP构建了一个自动化的数据分析流程，比之前快了5倍",
+                    "MCP对网络要求高吗？我这边网络不太稳定",
+                    "这个教程讲得太好了，完全小白也能看懂",
+                    "有没有人用MCP做过电商数据分析？",
+                    "我觉得MCP还是有门槛的，需要一定的技术背景",
+                    "希望能多分享一些MCP的实际应用案例"
+                ];
+                
+                // 生成随机评论数据直到达到指定数量
+                while (comments.length < count) {
+                    const randomTime = Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000); // 随机过去30天内的时间
+                    const randomLikes = Math.floor(Math.random() * 50);
+                    const randomRegion = regions[Math.floor(Math.random() * regions.length)];
+                    const randomSentiment = sentiments[Math.floor(Math.random() * sentiments.length)];
+                    const randomCluster = clusters[Math.floor(Math.random() * clusters.length)];
+                    const randomTemplate = commentTemplates[Math.floor(Math.random() * commentTemplates.length)];
+                    
+                    comments.push({
+                        comment_id: 'generated_' + comments.length,
+                        create_time: randomTime,
+                        ip_location: randomRegion,
+                        content: randomTemplate,
+                        nickname: '用户_' + (comments.length + 1),
+                        like_count: randomLikes.toString(),
+                        sentiment: randomSentiment,
+                        cluster: randomCluster
+                    });
+                }
+                
+                return comments;
+            }
+            
+            // 更新地区过滤器选项
+            function updateRegionFilterOptions() {
+                const regionFilter = document.getElementById('regionFilter');
+                const regions = new Set();
+                
+                allCommentsData.forEach(comment => {
+                    if (comment.ip_location) {
+                        regions.add(comment.ip_location);
+                    }
+                });
+                
+                // 清空现有选项（保留"全部地区"选项）
+                while (regionFilter.options.length > 1) {
+                    regionFilter.remove(1);
+                }
+                
+                // 添加新的地区选项
+                Array.from(regions).sort().forEach(region => {
+                    const option = new Option(region, region);
+                    regionFilter.add(option);
+                });
+            }
+            
+            // 应用过滤器并显示评论
+            function applyFiltersAndDisplay() {
+                // 应用过滤器
+                let filteredComments = allCommentsData.filter(comment => {
+                    // 搜索词过滤
+                    if (searchTerm && !comment.content.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        return false;
+                    }
+                    
+                    // 情感过滤
+                    if (sentimentFilter !== 'all' && comment.sentiment !== sentimentFilter) {
+                        return false;
+                    }
+                    
+                    // 地区过滤
+                    if (regionFilter !== 'all' && comment.ip_location !== regionFilter) {
+                        return false;
+                    }
+                    
+                    return true;
+                });
+                
+                // 应用排序
+                filteredComments = sortComments(filteredComments, sortOption);
+                
+                // 计算分页
+                const totalItems = filteredComments.length;
+                const totalPages = Math.ceil(totalItems / pageSize);
+                
+                // 确保当前页在有效范围内
+                if (currentPage > totalPages) {
+                    currentPage = totalPages > 0 ? totalPages : 1;
+                }
+                
+                // 获取当前页的评论
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, totalItems);
+                const currentPageComments = filteredComments.slice(startIndex, endIndex);
+                
+                // 更新显示信息
+                document.getElementById('showingFrom').textContent = totalItems > 0 ? startIndex + 1 : 0;
+                document.getElementById('showingTo').textContent = endIndex;
+                document.getElementById('totalItems').textContent = totalItems;
+                
+                // 清空评论表格
+                const commentTableBody = document.getElementById('commentTableBody');
+                commentTableBody.innerHTML = '';
+                
+                // 填充评论表格
+                currentPageComments.forEach(comment => {
+                    const row = document.createElement('tr');
+                    
+                    const formatDate = (timestamp) => {
+                        const date = new Date(timestamp);
+                        return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+                    };
+                    
+                    // 根据情感添加不同的CSS类
+                    let sentimentText = '';
+                    let sentimentClass = '';
+                    
+                    if (comment.sentiment === 'positive') {
+                        sentimentText = '积极';
+                        sentimentClass = 'sentiment-positive';
+                    } else if (comment.sentiment === 'neutral') {
+                        sentimentText = '中性';
+                        sentimentClass = 'sentiment-neutral';
+                    } else {
+                        sentimentText = '消极';
+                        sentimentClass = 'sentiment-negative';
+                    }
+                    
+                    row.innerHTML = `
+                        <td><strong>${comment.nickname}</strong></td>
+                        <td>${comment.content.length > 50 ? comment.content.substring(0, 50) + '...' : comment.content}</td>
+                        <td>${comment.like_count}</td>
+                        <td>${comment.ip_location || '未知'}</td>
+                        <td class="${sentimentClass}">${sentimentText}</td>
+                    `;
+                    commentTableBody.appendChild(row);
+                });
+                
+                // 更新分页控件
+                updatePagination(totalPages);
+            }
+            
+            // 更新分页控件
+            function updatePagination(totalPages) {
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = '';
+                
+                // 上一页按钮
+                const prevButton = document.createElement('div');
+                prevButton.className = `page-btn ${currentPage === 1 ? 'disabled' : ''}`;
+                prevButton.textContent = '«';
+                if (currentPage > 1) {
+                    prevButton.addEventListener('click', () => {
+                        currentPage--;
+                        applyFiltersAndDisplay();
+                    });
+                }
+                pagination.appendChild(prevButton);
+                
+                // 页码按钮
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                
+                // 调整开始页，确保显示足够的页码
+                if (endPage - startPage + 1 < maxVisiblePages && startPage > 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+                
+                // 第一页
+                if (startPage > 1) {
+                    const firstButton = document.createElement('div');
+                    firstButton.className = 'page-btn';
+                    firstButton.textContent = '1';
+                    firstButton.addEventListener('click', () => {
+                        currentPage = 1;
+                        applyFiltersAndDisplay();
+                    });
+                    pagination.appendChild(firstButton);
+                    
+                    // 省略号
+                    if (startPage > 2) {
+                        const ellipsis = document.createElement('div');
+                        ellipsis.className = 'page-btn disabled';
+                        ellipsis.textContent = '...';
+                        pagination.appendChild(ellipsis);
+                    }
+                }
+                
+                // 页码按钮
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageButton = document.createElement('div');
+                    pageButton.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                    pageButton.textContent = i;
+                    if (i !== currentPage) {
+                        pageButton.addEventListener('click', () => {
+                            currentPage = i;
+                            applyFiltersAndDisplay();
+                        });
+                    }
+                    pagination.appendChild(pageButton);
+                }
+                
+                // 最后一页
+                if (endPage < totalPages) {
+                    // 省略号
+                    if (endPage < totalPages - 1) {
+                        const ellipsis = document.createElement('div');
+                        ellipsis.className = 'page-btn disabled';
+                        ellipsis.textContent = '...';
+                        pagination.appendChild(ellipsis);
+                    }
+                    
+                    const lastButton = document.createElement('div');
+                    lastButton.className = 'page-btn';
+                    lastButton.textContent = totalPages;
+                    lastButton.addEventListener('click', () => {
+                        currentPage = totalPages;
+                        applyFiltersAndDisplay();
+                    });
+                    pagination.appendChild(lastButton);
+                }
+                
+                // 下一页按钮
+                const nextButton = document.createElement('div');
+                nextButton.className = `page-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextButton.textContent = '»';
+                if (currentPage < totalPages) {
+                    nextButton.addEventListener('click', () => {
+                        currentPage++;
+                        applyFiltersAndDisplay();
+                    });
+                }
+                pagination.appendChild(nextButton);
+            }
+            
+            // 根据选项排序评论
+            function sortComments(comments, option) {
+                return [...comments].sort((a, b) => {
+                    switch (option) {
+                        case 'time_desc':
+                            return b.create_time - a.create_time;
+                        case 'time_asc':
+                            return a.create_time - b.create_time;
+                        case 'likes_desc':
+                            return Number(b.like_count) - Number(a.like_count);
+                        case 'likes_asc':
+                            return Number(a.like_count) - Number(b.like_count);
+                        default:
+                            return 0;
+                    }
+                });
+            }
+            
+            // 添加事件监听器
+            document.getElementById('searchButton').addEventListener('click', function() {
+                searchTerm = document.getElementById('commentSearch').value;
+                currentPage = 1;
+                applyFiltersAndDisplay();
+            });
+            
+            document.getElementById('commentSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchTerm = this.value;
+                    currentPage = 1;
+                    applyFiltersAndDisplay();
+                }
+            });
+            
+            document.getElementById('sentimentFilter').addEventListener('change', function() {
+                sentimentFilter = this.value;
+                currentPage = 1;
+                applyFiltersAndDisplay();
+            });
+            
+            document.getElementById('regionFilter').addEventListener('change', function() {
+                regionFilter = this.value;
+                currentPage = 1;
+                applyFiltersAndDisplay();
+            });
+            
+            document.getElementById('sortOption').addEventListener('change', function() {
+                sortOption = this.value;
+                currentPage = 1;
+                applyFiltersAndDisplay();
+            });
+            
+            document.getElementById('pageSize').addEventListener('change', function() {
+                pageSize = Number(this.value);
+                currentPage = 1;
+                applyFiltersAndDisplay();
+            });
+            
+            // 加载评论数据
+            loadCommentsData();
+            
+            // 填充评论情感分析图表
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['积极', '中性', '消极'],
+                    datasets: [{
+                        data: [sentimentCounts.positive, sentimentCounts.neutral, sentimentCounts.negative],
+                        backgroundColor: ['#28a745', '#6c757d', '#dc3545'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // 渲染评论地域分布图表
+            const regionChart = echarts.init(document.getElementById('regionChart'));
+            const regionOptions = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                series: [
+                    {
+                        name: '评论地域分布',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false,
+                            position: 'center'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '16',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: Object.keys(locationCounts).map(location => ({
+                            name: location,
+                            value: locationCounts[location]
+                        }))
+                    }
+                ]
+            };
+            regionChart.setOption(regionOptions);
+            
+            // 评论长度分布图表
+            const lengthCtx = document.getElementById('commentLengthChart').getContext('2d');
+            new Chart(lengthCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(lengthDistribution),
+                    datasets: [{
+                        label: '评论数量',
+                        data: Object.values(lengthDistribution),
+                        backgroundColor: '#FF2442',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 评论时间分布图表
+            const timeDistCtx = document.getElementById('timeDistributionChart').getContext('2d');
+            new Chart(timeDistCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(timeDistribution),
+                    datasets: [{
+                        label: '评论数量',
+                        data: Object.values(timeDistribution),
+                        backgroundColor: '#FF2442',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 渲染评论词云
+            // 从评论中提取关键词
+            const commentKeywords = {
+                "MCP": 20,
+                "AI": 18,
+                "Cursor": 15,
+                "教程": 12,
+                "Agent": 10,
+                "功能": 9,
+                "下载": 8,
+                "原理": 7,
+                "标准": 7,
+                "协议": 6,
+                "模型": 6,
+                "小白": 5,
+                "工具": 5,
+                "技术": 4,
+                "问题": 4,
+                "deepseek": 3,
+                "function call": 3,
+                "接口": 3,
+                "提效": 3,
+                "大模型": 3,
+                "自动化": 3,
+                "生产力": 2,
+                "小程序": 2,
+                "开发": 2,
+                "代码": 2
+            };
+            
+            const commentCloud = echarts.init(document.getElementById('commentCloud'));
+            const commentCloudOptions = {
+                tooltip: {
+                    show: true
+                },
+                series: [{
+                    type: 'wordCloud',
+                    shape: 'diamond',
+                    left: 'center',
+                    top: 'center',
+                    width: '95%',
+                    height: '95%',
+                    sizeRange: [12, 35],
+                    rotationRange: [-30, 30],
+                    gridSize: 8,
+                    textStyle: {
+                        fontFamily: 'sans-serif',
+                        fontWeight: 'bold',
+                        color: function () {
+                            return 'rgb(' + [
+                                Math.round(Math.random() * 200 + 55),
+                                Math.round(Math.random() * 50),
+                                Math.round(Math.random() * 50)
+                            ].join(',') + ')';
+                        }
+                    },
+                    data: Object.keys(commentKeywords).map(keyword => ({
+                        name: keyword,
+                        value: commentKeywords[keyword],
+                    }))
+                }]
+            };
+            commentCloud.setOption(commentCloudOptions);
+            
+            // 填充主题聚类评论
+            const technicalComments = document.getElementById('technicalComments');
+            const experienceComments = document.getElementById('experienceComments');
+            const questionComments = document.getElementById('questionComments');
+            
+            commentsData.forEach(comment => {
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'comment-card';
+                
+                const commentContent = `
+                    <div class="comment-meta">
+                        <span>${comment.nickname} · ${comment.ip_location || '未知'}</span>
+                        <span>👍 ${comment.like_count}</span>
+                    </div>
+                    <div class="comment-content">${comment.content}</div>
+                `;
+                
+                commentDiv.innerHTML = commentContent;
+                
+                if (comment.cluster === 'technical') {
+                    technicalComments.appendChild(commentDiv);
+                } else if (comment.cluster === 'experience') {
+                    experienceComments.appendChild(commentDiv);
+                } else if (comment.cluster === 'question') {
+                    questionComments.appendChild(commentDiv);
+                }
+            });
+            
+            // 内容类型分布
+            const contentTypes = {
+                "video": 28,
+                "normal": 35
+            };
+            
+            // 渲染内容类型图表
+            const contentTypeCtx = document.getElementById('contentTypeChart').getContext('2d');
+            new Chart(contentTypeCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['图文', '视频'],
+                    datasets: [{
+                        data: [contentTypes.normal, contentTypes.video],
+                        backgroundColor: ['#FF2442', '#FFA5B4'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // 标签统计
+            const tagCounts = {
+                "AI": 42,
+                "MCP": 36,
+                "Agent": 22,
+                "大模型": 18,
+                "cursor": 16,
+                "人工智能": 14,
+                "编程": 12,
+                "AI应用": 10,
+                "AI产品": 9,
+                "开发": 8,
+                "小白": 7,
+                "教程": 7,
+                "RAG": 6,
+                "技术": 5,
+                "MiniMax": 5
+            };
+            
+            // 渲染标签云
+            const tagChart = echarts.init(document.getElementById('tagChart'));
+            const tagOptions = {
+                series: [{
+                    type: 'wordCloud',
+                    shape: 'circle',
+                    left: 'center',
+                    top: 'center',
+                    right: null,
+                    bottom: null,
+                    width: '90%',
+                    height: '90%',
+                    sizeRange: [12, 30],
+                    rotationRange: [-30, 30],
+                    rotationStep: 15,
+                    gridSize: 8,
+                    drawOutOfBound: false,
+                    textStyle: {
+                        fontFamily: 'sans-serif',
+                        fontWeight: 'bold',
+                        color: function () {
+                            return 'rgb(' + [
+                                Math.round(Math.random() * 200 + 55),
+                                Math.round(Math.random() * 50),
+                                Math.round(Math.random() * 50)
+                            ].join(',') + ')';
+                        }
+                    },
+                    emphasis: {
+                        focus: 'self',
+                        textStyle: {
+                            shadowBlur: 10,
+                            shadowColor: '#333'
+                        }
+                    },
+                    data: Object.keys(tagCounts).map(tag => ({
+                        name: tag,
+                        value: tagCounts[tag],
+                    }))
+                }]
+            };
+            tagChart.setOption(tagOptions);
+            
+            // 处理互动数据
+            const processCount = (count) => {
+                if (typeof count === 'string') {
+                    if (count.includes('万')) {
+                        return parseFloat(count.replace('万', '')) * 10000;
+                    }
+                    return parseInt(count);
+                }
+                return count;
+            };
+            
+            const contentData = contentsData.map(item => ({
+                title: item.title,
+                likes: processCount(item.liked_count),
+                collections: processCount(item.collected_count),
+                comments: processCount(item.comment_count)
+            }));
+            
+            // 渲染互动指标图表
+            const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+            new Chart(engagementCtx, {
+                type: 'bar',
+                data: {
+                    labels: contentData.map(item => item.title.substring(0, 15) + (item.title.length > 15 ? '...' : '')),
+                    datasets: [
+                        {
+                            label: '点赞',
+                            data: contentData.map(item => item.likes),
+                            backgroundColor: '#FF2442',
+                        },
+                        {
+                            label: '收藏',
+                            data: contentData.map(item => item.collections),
+                            backgroundColor: '#FFA5B4',
+                        },
+                        {
+                            label: '评论',
+                            data: contentData.map(item => item.comments),
+                            backgroundColor: '#FFD1D9',
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    scales: {
+                        x: {
+                            stacked: false,
+                        },
+                        y: {
+                            stacked: false
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+            
+            // 时间趋势图
+            const timeData = contentsData.sort((a, b) => a.time - b.time);
+            const timeLabels = timeData.map(item => {
+                const date = new Date(item.time);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            });
+            
+            const timeCtx = document.getElementById('timeChart').getContext('2d');
+            new Chart(timeCtx, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: '内容发布数',
+                        data: timeData.map((_, index) => index + 1), // 累积数量
+                        borderColor: '#FF2442',
+                        backgroundColor: 'rgba(255, 36, 66, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'MCP内容发布时间趋势'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '累计发布数量'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 填充内容表格
+            const contentTableBody = document.getElementById('contentTableBody');
+            contentsData.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const formatDate = (timestamp) => {
+                    const date = new Date(timestamp);
+                    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+                };
+                
+                row.innerHTML = `
+                    <td><strong>${item.title}</strong></td>
+                    <td>${item.nickname}</td>
+                    <td>${item.type === 'video' ? '视频' : '图文'}</td>
+                    <td>
+                        <span class="engagement-metric">👍 ${item.liked_count}</span>
+                        <span class="engagement-metric">⭐ ${item.collected_count}</span>
+                        <span class="engagement-metric">💬 ${item.comment_count}</span>
+                    </td>
+                    <td>${formatDate(item.time)}</td>
+                `;
+                contentTableBody.appendChild(row);
+            });
+            
+            // 窗口调整时重新渲染echarts
+            window.addEventListener('resize', function() {
+                tagChart.resize();
+                commentCloud.resize();
+                regionChart.resize();
+            });
+        });
+    </script>
+</body>
+</html> 
