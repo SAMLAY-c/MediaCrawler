@@ -324,18 +324,19 @@ class XiaoHongShuClient(AbstractApiClient):
         self,
         note_id: str,
         xsec_token: str,
-        crawl_interval: float = 1.0,
+        crawl_interval: float = config.REQUEST_INTERVAL if hasattr(config, 'REQUEST_INTERVAL') else 1.0,
         callback: Optional[Callable] = None,
         max_count: int = 10,
     ) -> List[Dict]:
         """
-        获取指定笔记下的所有一级评论，该方法会一直查找一个帖子下的所有评论信息
+        获取指定笔记下的所有评论, 该方法会一直查找一个笔记下的所有评论信息
         Args:
             note_id: 笔记ID
             xsec_token: 验证token
-            crawl_interval: 爬取一次笔记的延迟单位（秒）
-            callback: 一次笔记爬取结束后
-            max_count: 一次笔记爬取的最大评论数量
+            crawl_interval: 爬取一次评论的延迟单位（秒）
+            callback: 一次评论爬取结束后的更新回调函数
+            max_count: 最大获取评论数量
+
         Returns:
 
         """
@@ -373,7 +374,7 @@ class XiaoHongShuClient(AbstractApiClient):
         self,
         comments: List[Dict],
         xsec_token: str,
-        crawl_interval: float = 1.0,
+        crawl_interval: float = config.REQUEST_INTERVAL if hasattr(config, 'REQUEST_INTERVAL') else 1.0,
         callback: Optional[Callable] = None,
     ) -> List[Dict]:
         """
@@ -482,7 +483,7 @@ class XiaoHongShuClient(AbstractApiClient):
     async def get_all_notes_by_creator(
         self,
         user_id: str,
-        crawl_interval: float = 1.0,
+        crawl_interval: float = config.REQUEST_INTERVAL if hasattr(config, 'REQUEST_INTERVAL') else 1.0,
         callback: Optional[Callable] = None,
     ) -> List[Dict]:
         """

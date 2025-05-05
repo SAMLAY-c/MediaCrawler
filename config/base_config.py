@@ -11,7 +11,7 @@
 
 # 基础配置
 PLATFORM = "xhs"
-KEYWORDS = "双非本科经济学天津暑期实习"  # 关键词搜索配置，以英文逗号分隔
+KEYWORDS = "北京财务bp"  # 关键词搜索配置，以英文逗号分隔
 LOGIN_TYPE = "qrcode"  # qrcode or phone or cookie
 COOKIES = ""
 # 具体值参见media_platform.xxx.field下的枚举值，暂时只支持小红书
@@ -22,19 +22,83 @@ CRAWLER_TYPE = (
     "search"  # 爬取类型，search(关键词搜索) | detail(帖子详情)| creator(创作者主页数据)
 )
 # 自定义User Agent（暂时仅对XHS有效）
-UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0'
+UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+# 并发率（以下参数仅对XHS有效）
+CONCURRENCY = 2  # 降低并发率降低被限制风险
+
+# 代理配置
+IS_ENABLE_PROXY = False
+PROXY_TYPE = "http"  # http or socks5
+PROXY_IP = "127.0.0.1"
+PROXY_PORT = 7890
+
+# 浏览器配置
+BROWSER_PATH = ""  # 浏览器路径
+
+# 是否需要登录
+IS_REQUIRE_LOGIN = True
+# 尝试是否接着完成之前的爬虫任务
+KEEP_ALIVE = False
+
+# 词云相关
+# 是否开启生成评论词云图
+ENABLE_GET_WORDCLOUD = True
+# 自定义词语及其分组
+# 添加规则：xx:yy 其中xx为自定义添加的词组，yy为将xx该词组分到的组名。
+CUSTOM_WORDS = {
+    "洗脸": "洗护",  
+    "沐浴": "洗护",
+    "香味": "特性",
+    "温和": "特性",
+    "保湿": "功效",
+    "天然": "成分",
+    "手工": "类型",
+    "控油": "功效",
+    "舒肤佳": "品牌",
+    "力士": "品牌",
+    "滋润": "功效",
+    "干裂": "问题",
+}
+
+# 爬虫输出相关
+# 是否需要导出excel
+IS_ENABLE_LOGGER_FILE = True
+
+# 筛选相关
+# 类型：hot | shop | general，暂时仅对抖音有效
+SEARCH_TYPE = "hot"
+
+# 最大爬取数量
+SEARCH_MAX_COUNT = 200
+
+# 爬虫详情页所有下级评论（暂时仅对小红书有效）
+SEARCH_ALL_COMMENTS = True
+
+# 请求间隔时间(秒)，降低被封风险
+REQUEST_INTERVAL = 30
+
+# BILIBILI 配置
+# 排序类型，按粉丝数：follower, 按投稿时间：pubdate, 按访问量：click, 目前仅对用户搜索的检索结果生效（仅对B站有效）
+BILIBILI_ORDER = "follower"
+# 类型，视频：video, 用户：user, 直播间：live, 动态：article（仅对B站有效）
+BILIBILI_SEARCH_TYPE = "video"
+
+# 是否使用代理池（暂时仅对小红书生效）
+IS_ENABLE_PROXY_POOL = False
+# 代理池的地址
+PROXY_POOL_URL = 'http://localhost:5010/get'
 
 # 是否开启 IP 代理
 ENABLE_IP_PROXY = False
 
 # 未启用代理时的最大爬取间隔，单位秒（暂时仅对XHS有效）
-CRAWLER_MAX_SLEEP_SEC = 2
+CRAWLER_MAX_SLEEP_SEC = 20
 
 # 代理IP池数量
 IP_PROXY_POOL_COUNT = 2
 
 # 代理IP提供商名称
-IP_PROXY_PROVIDER_NAME = "kuaidaili"
+IP_PROXY_PROVIDER_NAME = "ppool"
 
 # 设置为True不会打开浏览器（无头浏览器）
 # 设置False会打开一个浏览器
@@ -55,7 +119,7 @@ USER_DATA_DIR = "%s_user_data_dir"  # %s will be replaced by platform name
 START_PAGE = 1
 
 # 爬取视频/帖子的数量控制
-CRAWLER_MAX_NOTES_COUNT = 300
+CRAWLER_MAX_NOTES_COUNT = 50
 
 # 并发爬虫数量控制
 MAX_CONCURRENCY_NUM = 1
@@ -170,21 +234,6 @@ ZHIHU_SPECIFIED_ID_LIST = [
     # "https://zhuanlan.zhihu.com/p/673461588", # 文章
     # "https://www.zhihu.com/zvideo/1539542068422144000" # 视频
 ]
-
-# 词云相关
-# 是否开启生成评论词云图
-ENABLE_GET_WORDCLOUD = True
-# 自定义词语及其分组
-# 添加规则：xx:yy 其中xx为自定义添加的词组，yy为将xx该词组分到的组名。
-CUSTOM_WORDS = {
-    "零几": "年份",  # 将"零几"识别为一个整体
-    "高频词": "专业术语",  # 示例自定义词
-    "经济学": "专业",
-    "双非": "学校",
-    "天津": "地区",
-    "暑期": "时间",
-    "实习": "工作",
-}
 
 # 停用(禁用)词文件路径
 STOP_WORDS_FILE = "./docs/hit_stopwords.txt"

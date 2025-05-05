@@ -1,0 +1,67 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Data Organization and Naming Convention
+
+This rule defines the standard way of organizing and naming data files collected by MediaCrawler.
+
+## Directory Structure
+
+All crawled data should be organized in a consistent hierarchical structure:
+
+```
+data/
+  ├── {platform}/           # Platform name (xhs, dy, ks, bili, wb, tieba, zhihu)
+  │    ├── json/            # JSON format data
+  │    ├── processed/       # Processed data files
+  │    ├── words/           # Word cloud and text analysis data
+  │    └── visualization/   # Visualization outputs and code
+```
+
+## Naming Convention
+
+### Folder Naming
+
+Folders containing crawled data should follow this naming pattern:
+```
+{platform}_{timestamp}_{keywords}
+```
+
+For example:
+- `xhs_20240505_美食探店` 
+- `dy_20240505_旅游攻略`
+- `bili_20240505_编程教程`
+
+### File Naming
+
+Files within these folders should follow this pattern:
+```
+{platform}_{content_type}_{timestamp}_{id}.{extension}
+```
+
+For example:
+- `xhs_post_20240505_12345.json`
+- `dy_video_20240505_67890.json`
+- `bili_comments_20240505_54321.csv`
+
+## Visualization Files
+
+Any visualization code or output files should be stored in the corresponding platform's directory:
+```
+data/{platform}/visualization/{platform}_{visualization_type}_{timestamp}.{extension}
+```
+
+For example:
+- `data/xhs/visualization/xhs_wordcloud_20240505.html`
+- `data/dy/visualization/dy_sentiment_20240505.html`
+- `data/bili/visualization/bili_topic_network_20240505.html`
+
+## Implementation Notes
+
+- The platform name should always be lowercase (xhs, dy, ks, bili, wb, tieba, zhihu)
+- Timestamps should be in YYYYMMDD format
+- Keywords should be encoded properly if they contain special characters
+- Visualization code should be self-contained or include references to necessary dependencies
+
