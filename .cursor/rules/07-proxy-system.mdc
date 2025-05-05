@@ -1,0 +1,78 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Proxy System
+
+MediaCrawler provides support for using proxies to avoid rate limiting and IP blocking. The proxy functionality is implemented in the [proxy/](mdc:proxy/__init__.py) directory.
+
+## Proxy Configuration
+
+Proxy settings are configured in [config/base_config.py](mdc:config/base_config.py):
+
+```python
+# Single proxy configuration
+IS_ENABLE_PROXY = False
+PROXY_TYPE = "http"  # http or socks5
+PROXY_IP = "127.0.0.1"
+PROXY_PORT = 7890
+
+# Proxy pool configuration
+IS_ENABLE_PROXY_POOL = False
+PROXY_POOL_URL = 'http://localhost:5010/get'
+
+# IP proxy settings
+ENABLE_IP_PROXY = False
+IP_PROXY_POOL_COUNT = 2
+IP_PROXY_PROVIDER_NAME = "ppool"
+```
+
+## Proxy Types
+
+### Single Proxy
+
+When `IS_ENABLE_PROXY` is set to `True`, the crawler will use a single proxy specified by:
+- `PROXY_TYPE` - Proxy protocol type (http or socks5)
+- `PROXY_IP` - Proxy server IP address
+- `PROXY_PORT` - Proxy server port
+
+### Proxy Pool
+
+When `IS_ENABLE_PROXY_POOL` is set to `True`, the crawler will use a proxy pool service:
+- `PROXY_POOL_URL` - URL endpoint to fetch a proxy from the pool
+
+This requires a proxy pool service running, such as [proxy_pool](mdc:https:/github.com/jhao104/proxy_pool).
+
+## Implementation Details
+
+The proxy configuration is passed to Playwright when launching the browser:
+
+```python
+playwright_proxy = None
+if config.IS_ENABLE_PROXY:
+    playwright_proxy = {
+        "server": f"{config.PROXY_TYPE}://{config.PROXY_IP}:{config.PROXY_PORT}",
+    }
+```
+
+For proxy pools, the system fetches a new proxy address for each request:
+
+```python
+if config.IS_ENABLE_PROXY_POOL:
+    proxy = await get_proxy_from_pool()
+    if proxy:
+        playwright_proxy = {
+            "server": f"http://{proxy}",
+        }
+```
+
+## Rotation and Fallback
+
+When using a proxy pool, if a request fails, the system will:
+1. Remove the failed proxy from the pool
+2. Fetch a new proxy
+3. Retry the request with the new proxy
+
+This helps maintain a continuous operation even when some proxies become unavailable or get blocked.
+

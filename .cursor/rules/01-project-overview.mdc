@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# MediaCrawler Project Overview
+
+MediaCrawler is a crawler toolkit for various social media platforms in China, including:
+- Xiaohongshu (小红书)
+- Douyin (抖音)
+- Kuaishou (快手)
+- Bilibili (B站)
+- Weibo (微博)
+- Tieba (贴吧)
+- Zhihu (知乎)
+
+The project uses [Playwright](mdc:https:/playwright.dev) to maintain browser context after login, which helps avoid complex JS reverse engineering for encrypted parameters.
+
+## Key Features
+- Keyword search
+- Specific post details retrieval
+- Comment extraction (including sub-comments)
+- Creator profile data scraping
+- Login state caching
+- IP proxy pool support
+- Comment word cloud generation
+
+## Main Entry Point
+The project entry point is [main.py](mdc:main.py), which initializes the crawler factory to create the appropriate crawler based on the platform.
+
+## Core Directories
+- [media_platform/](mdc:media_platform/__init__.py) - Contains platform-specific implementations
+- [base/](mdc:base/base_crawler.py) - Base abstract classes for all crawler components
+- [config/](mdc:config/base_config.py) - Configuration settings
+- [store/](mdc:store/__init__.py) - Data storage implementations
+- [proxy/](mdc:proxy/__init__.py) - IP proxy handling
+
+## Disclaimer
+This project is for educational and research purposes only. Users must comply with platform terms and legal requirements.
+

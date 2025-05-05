@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Platform Implementations
+
+Each supported platform has its own implementation in the [media_platform/](mdc:media_platform/__init__.py) directory. Each platform module follows a similar structure:
+
+## Common Structure
+- `client.py` - API client for making platform requests
+- `login.py` - Platform-specific login methods
+- `core.py` - Core crawler implementation
+- `field.py` - Enums and constants for the platform
+- `help.py` - Helper functions
+
+## Platforms
+
+### Xiaohongshu (小红书)
+The Xiaohongshu implementation is in [media_platform/xhs/](mdc:media_platform/xhs/__init__.py).
+- `XiaoHongShuCrawler` class in [media_platform/xhs/core.py](mdc:media_platform/xhs/core.py)
+
+### Douyin (抖音)
+The Douyin implementation is in [media_platform/douyin/](mdc:media_platform/douyin/__init__.py).
+- `DouYinCrawler` class in [media_platform/douyin/core.py](mdc:media_platform/douyin/core.py)
+
+### Kuaishou (快手)
+The Kuaishou implementation is in [media_platform/kuaishou/](mdc:media_platform/kuaishou/__init__.py).
+- `KuaishouCrawler` class in [media_platform/kuaishou/core.py](mdc:media_platform/kuaishou/core.py)
+
+### Bilibili (B站)
+The Bilibili implementation is in [media_platform/bilibili/](mdc:media_platform/bilibili/__init__.py).
+- `BilibiliCrawler` class in [media_platform/bilibili/core.py](mdc:media_platform/bilibili/core.py)
+
+### Weibo (微博)
+The Weibo implementation is in [media_platform/weibo/](mdc:media_platform/weibo/__init__.py).
+- `WeiboCrawler` class in [media_platform/weibo/core.py](mdc:media_platform/weibo/core.py)
+
+### Tieba (贴吧)
+The Tieba implementation is in [media_platform/tieba/](mdc:media_platform/tieba/__init__.py).
+- `TieBaCrawler` class in [media_platform/tieba/core.py](mdc:media_platform/tieba/core.py)
+
+### Zhihu (知乎)
+The Zhihu implementation is in [media_platform/zhihu/](mdc:media_platform/zhihu/__init__.py).
+- `ZhihuCrawler` class in [media_platform/zhihu/core.py](mdc:media_platform/zhihu/core.py)
+

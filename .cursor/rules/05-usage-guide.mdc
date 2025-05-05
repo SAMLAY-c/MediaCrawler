@@ -1,0 +1,87 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Usage Guide
+
+## Installation
+
+1. Create and activate a Python virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # macOS/Linux
+   venv\Scripts\activate     # Windows
+   ```
+
+2. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. Install Playwright browsers:
+   ```
+   playwright install
+   ```
+
+## Running Crawlers
+
+The main entry point is [main.py](mdc:main.py), which accepts command-line arguments to configure the crawling process.
+
+### Command Line Arguments
+
+The command-line arguments are handled in [cmd_arg.py](mdc:cmd_arg.py), with the following options:
+
+- `--platform` - Target platform (xhs, dy, ks, bili, wb, tieba, zhihu)
+- `--lt` - Login type (qrcode, phone, cookie)
+- `--type` - Crawler type (search, detail, creator)
+- `--nocache` - Disable caching
+
+### Example Commands
+
+#### Keyword Search
+
+Search for posts matching keywords specified in configuration:
+```
+python main.py --platform xhs --lt qrcode --type search
+```
+
+#### Post Detail
+
+Retrieve specific posts by ID:
+```
+python main.py --platform xhs --lt qrcode --type detail
+```
+
+#### Creator Profile
+
+Retrieve posts from specific creators:
+```
+python main.py --platform xhs --lt qrcode --type creator
+```
+
+## Data Storage
+
+Data can be stored in multiple formats:
+
+- CSV files (in the `data/` directory)
+- JSON files (in the `data/` directory)
+- MySQL database (requires setup)
+
+To initialize the database schema:
+```
+python db.py
+```
+
+## Configuration
+
+Before running crawlers, you should customize the configuration in [config/base_config.py](mdc:config/base_config.py) according to your needs:
+
+1. Set `PLATFORM` to your target platform
+2. Set `KEYWORDS` for search queries
+3. Configure `CRAWLER_TYPE` for the type of crawling
+4. Adjust maximum counts for posts and comments
+5. Set data storage options with `SAVE_DATA_OPTION`
+6. Configure platform-specific ID lists for targeted crawling
+
+

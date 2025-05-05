@@ -1,0 +1,45 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Base Architecture
+
+The project uses abstract base classes to define common interfaces for all platform implementations. These are defined in [base/base_crawler.py](mdc:base/base_crawler.py).
+
+## Abstract Classes
+
+### AbstractCrawler
+The main abstract class that all platform-specific crawlers must implement:
+- `start()` - Entry point for the crawler
+- `search()` - Search functionality
+- `launch_browser()` - Browser initialization with Playwright
+
+### AbstractLogin
+Defines the interface for platform login methods:
+- `begin()` - Start the login process
+- `login_by_qrcode()` - QR code-based login
+- `login_by_mobile()` - Mobile phone-based login
+- `login_by_cookies()` - Cookie-based login
+
+### AbstractStore
+Defines the interface for data storage:
+- `store_content()` - Store content items (posts/videos)
+- `store_comment()` - Store comment data
+- `store_creator()` - Store creator profile data
+
+### AbstractStoreImage
+Defines the interface for image storage:
+- `store_image()` - Store image content
+
+### AbstractApiClient
+Defines the interface for API clients:
+- `request()` - Make HTTP requests
+- `update_cookies()` - Update cookies from browser context
+
+## Implementation Pattern
+
+Each platform creates concrete implementations of these abstract classes to provide platform-specific functionality while maintaining a consistent interface across the project.
+
+The factory pattern in [main.py](mdc:main.py) is used to create the appropriate crawler based on the platform selected in configuration.
+

@@ -1,0 +1,68 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Configuration System
+
+The project configuration is managed in the [config/](mdc:config/__init__.py) directory, with the main settings in [config/base_config.py](mdc:config/base_config.py).
+
+## Configuration Files
+
+- [config/base_config.py](mdc:config/base_config.py) - Main configuration settings
+- [config/db_config.py](mdc:config/db_config.py) - Database configuration
+
+## Key Configuration Parameters
+
+### General Settings
+- `PLATFORM` - Target platform (xhs, dy, ks, bili, wb, tieba, zhihu)
+- `KEYWORDS` - Search keywords (comma-separated)
+- `LOGIN_TYPE` - Login method (qrcode, phone, cookie)
+- `CRAWLER_TYPE` - Crawl type (search, detail, creator)
+- `SEARCH_MAX_COUNT` - Maximum items to crawl
+- `CRAWLER_MAX_NOTES_COUNT` - Maximum posts/videos to crawl
+- `CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES` - Maximum comments per post
+
+### Login and Browser
+- `IS_REQUIRE_LOGIN` - Whether login is required
+- `SAVE_LOGIN_STATE` - Whether to save login state
+- `HEADLESS` - Whether to use headless browser
+- `USER_DATA_DIR` - Browser user data directory
+- `BROWSER_PATH` - Custom browser path
+
+### Proxy Settings
+- `IS_ENABLE_PROXY` - Whether to use proxy
+- `PROXY_TYPE` - Proxy type (http, socks5)
+- `PROXY_IP` - Proxy IP address
+- `PROXY_PORT` - Proxy port
+- `IS_ENABLE_PROXY_POOL` - Whether to use proxy pool
+- `PROXY_POOL_URL` - Proxy pool URL
+
+### Content Settings
+- `ENABLE_GET_COMMENTS` - Whether to get comments
+- `ENABLE_GET_SUB_COMMENTS` - Whether to get sub-comments
+- `ENABLE_GET_IMAGES` - Whether to get images
+- `ENABLE_GET_WORDCLOUD` - Whether to generate word cloud
+
+### Data Storage
+- `SAVE_DATA_OPTION` - Data storage option (csv, db, json)
+
+## Platform-Specific Lists
+Each platform has specific ID lists for targeting particular content:
+- `XHS_SPECIFIED_NOTE_URL_LIST` - Xiaohongshu URLs
+- `DY_SPECIFIED_ID_LIST` - Douyin IDs
+- `KS_SPECIFIED_ID_LIST` - Kuaishou IDs
+- `BILI_SPECIFIED_ID_LIST` - Bilibili video IDs
+- `WEIBO_SPECIFIED_ID_LIST` - Weibo post IDs
+- `TIEBA_SPECIFIED_ID_LIST` - Tieba post IDs
+- `ZHIHU_SPECIFIED_ID_LIST` - Zhihu post IDs
+
+As well as creator lists:
+- `XHS_CREATOR_ID_LIST` - Xiaohongshu creator IDs
+- `DY_CREATOR_ID_LIST` - Douyin creator IDs
+- `BILI_CREATOR_ID_LIST` - Bilibili creator IDs
+- `KS_CREATOR_ID_LIST` - Kuaishou creator IDs
+- `WEIBO_CREATOR_ID_LIST` - Weibo creator IDs
+- `TIEBA_CREATOR_URL_LIST` - Tieba creator URLs
+- `ZHIHU_CREATOR_URL_LIST` - Zhihu creator URLs
+
